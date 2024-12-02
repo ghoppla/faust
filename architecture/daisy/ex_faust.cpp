@@ -47,9 +47,9 @@
 #include "faust/gui/meta.h"
 #include "faust/gui/UI.h"
 #if defined PATCHSM
-#include "faust/gui/DaisyPatchInitControlUI.h"
-#else
-#include "faust/gui/DaisyControlUI.h"
+#include "faust/gui/DaisyPatchSmControlUI.h"
+//#else
+//#include "faust/gui/DaisyControlUI.h"
 #endif
 #include "faust/dsp/dsp.h"
 
@@ -85,20 +85,14 @@ using namespace std;
 #include "faust/dsp/poly-dsp.h"
 #endif
 
-#ifdef PATCH
-static daisy::DaisyPatch hw;
-#elif defined POD
-static daisy::DaisyPod hw; 
-#elif defined PATCHSM
+#ifdef PATCHSM
 static daisy::patch_sm::DaisyPatchSM hw; 
 #else
 static daisy::DaisySeed hw;
 #endif
 
 #if defined PATCHSM
-static DaisyPatchInitControlUI* control_UI = nullptr;
-#else
-static DaisyControlUI* control_UI = nullptr;
+static DaisyPatchSmControlUI* control_UI = nullptr;
 #endif
 static dsp* DSP = nullptr;
 
@@ -140,19 +134,15 @@ int main(void)
     DSP->init(MY_SAMPLE_RATE);
     
     // setup controllers
-#if (defined PATCH) || (defined POD)
-    control_UI = new DaisyControlUI(&hw.seed, MY_SAMPLE_RATE/MY_BUFFER_SIZE);
-    DSP->buildUserInterface(control_UI);
-    hw.StartAdc();
-#elif defined (PATCHSM)
-    control_UI = new DaisyPatchInitControlUI(&hw, MY_SAMPLE_RATE/MY_BUFFER_SIZE);
+#if defined (PATCHSM)
+    control_UI = new DaisyPatchSmControlUI(&hw, MY_SAMPLE_RATE/MY_BUFFER_SIZE);
     DSP->buildUserInterface(control_UI);
 #else
     //initialize UI for seed
-    control_UI = new DaisyControlUI(&hw, MY_SAMPLE_RATE/MY_BUFFER_SIZE);
-    DSP->buildUserInterface(control_UI);
+    //control_UI = new DaisyControlUI(&hw, MY_SAMPLE_RATE/MY_BUFFER_SIZE);
+    //DSP->buildUserInterface(control_UI);
     // start ADC
-    hw.adc.Start();
+    //hw.adc.Start();
 #endif
     // define and start callback
     hw.StartAudio(AudioCallback);
