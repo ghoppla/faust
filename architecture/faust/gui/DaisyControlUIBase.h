@@ -53,29 +53,43 @@ class DaisyControlUIBase : public GenericUI
             
             virtual void update() = 0;
         };
+
+        /*Abstract class to handle all the different inputs of PATCH, POD and PATCHSM
+        * e.g. daisy::GateIn, daisy::Switch ... 
+        */
+        struct DigitalInput {
+            virtual FAUSTFLOAT Get() const = 0;
+            virtual ~DigitalInput() = default;
+        };
     
-        struct SwitchButton : daisy::Switch, UpdatableZone {
+
+        struct SwitchButton : UpdatableZone {
             
-            SwitchButton(FAUSTFLOAT* zone):UpdatableZone(zone)
+            DigitalInput* fInput;
+
+            SwitchButton(DigitalInput* input, FAUSTFLOAT* zone)
+            : fInput(input), UpdatableZone(zone)
             {}
             
             void update()
             {
-                *fZone = RawState();
+                *fZone = fInput->Get();
             }
         };
     
         // Implement checkbox using daisy::Switch
-        struct CheckButton : daisy::Switch, UpdatableZone {
+        struct CheckButton : UpdatableZone {
             
             FAUSTFLOAT fLastButton;
+            DigitalInput* fInput; 
             
-            CheckButton(FAUSTFLOAT* zone):UpdatableZone(zone), fLastButton(0)
+            CheckButton(DigitalInput* input, FAUSTFLOAT* zone)
+            : fInput(input), UpdatableZone(zone), fLastButton(0)
             {}
             
             void update()
             {
-                FAUSTFLOAT button = RawState();
+                FAUSTFLOAT button = fInput->Get();
                 if (button == 1.0 && (button != fLastButton)) {
                     *fZone = !*fZone;
                 }

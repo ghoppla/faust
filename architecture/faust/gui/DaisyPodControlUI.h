@@ -1,4 +1,4 @@
-/************************** BEGIN DaisyPatchSmControlUI.h **********************
+/************************** BEGIN DaisyPodControlUI.h **********************
  FAUST Architecture File
  Copyright (C) 2003-2024 GRAME, Centre National de Creation Musicale
  ---------------------------------------------------------------------
@@ -23,8 +23,8 @@
  *************************************************************************/
 
 
-#ifndef FAUST_DAISYPATCHSMCONTROL_H
-#define FAUST_DAISYPATCHSMCONTROL_H
+#ifndef FAUST_DAISYPODCONTROL_H
+#define FAUST_DAISYPODCONTROL_H
 
 
 #include <string>
@@ -36,28 +36,14 @@
 
 #include "faust/gui/DecoratorUI.h"
 #include "faust/gui/ValueConverter.h"
-#include "faust/gui/DaisyControlUIBase.h"
+#include "faust/gui/DaisyGenericControlUI.h"
 
 
-class DaisyPatchSmControlUI : public DaisyControlUIBase
+class DaisyPodControlUI : public DaisyGenericControlUI
 {   
     protected:
 
-        daisy::patch_sm::DaisyPatchSM* fHw;
-
-
-        struct DaisyGateIn : public DigitalInput
-        {
-            private:
-                daisy::GateIn* fGate; // Referenz auf das Daisy::Switch-Objekt
-
-            public:
-                DaisyGateIn(daisy::GateIn* gate) : fGate(gate) {}
-
-                FAUSTFLOAT Get() const override {
-                    return static_cast<FAUSTFLOAT>(fGate->State());
-                }
-        };
+        daisy::DaisyPod* fHw;
 
         void InitKnobs() override
         {
@@ -70,7 +56,7 @@ class DaisyPatchSmControlUI : public DaisyControlUIBase
                 } else {
                     converter = std::make_unique<LinearValueConverter>(0., 1., fKnobs[i].fMin, fKnobs[i].fMax);
                 }
-                std::unique_ptr<AnalogKnob> knob = std::make_unique<AnalogKnob>(&fHw->controls[fKnobs[i].fKnobId],
+                std::unique_ptr<AnalogKnob> knob = std::make_unique<AnalogKnob>(&fHw->knobs[fKnobs[i].fKnobId],
                                                   fKnobs[i].fZone,
                                                   converter,
                                                   fRate,
@@ -82,63 +68,42 @@ class DaisyPatchSmControlUI : public DaisyControlUIBase
 
     public: 
 
-        DaisyPatchSmControlUI(daisy::patch_sm::DaisyPatchSM* hw, int rate)
-        : DaisyControlUIBase(rate), fHw(hw)
+        DaisyPodControlUI(daisy::patch_sm::DaisyPatchSM* hw, int rate)
+        : DaisyGenericControlUI(rate), fHw(hw)
         { }
     
         // -- active widgets
         void addButton(const char* label, FAUSTFLOAT* zone)
         {
             if (fKey == "switch") {
-
-                if (std::string(fValue) == "1")
-                {
-                    std::unique_ptr<DaisyGateIn> gate = std::make_unique<DaisyGateIn>(&fHw->gate_in_1);                     
-                    std::unique_ptr<SwitchButton> button = std::make_unique<SwitchButton>(&gate, zone);
-                    fItems.push_back(std::move(button));
-
-                }
-                else if (std::string(fValue) == "2")
-                {
-                    std::unique_ptr<DaisyGateIn> gate = std::make_unique<DaisyGateIn>(&fHw->gate_in_2);
-                    std::unique_ptr<SwitchButton> button = std::make_unique<SwitchButton>(&gate, zone);
-                    fItems.push_back(std::move(button));
-                }
-
+                std::unique_ptr<SwitchButton> button = std::make_unique<SwitchButton>(zone);
+                //if (fValue == "1") {
+                    //button->Init(fSeed->GetPin(SW_1_PIN), fRate);
+                //}
+                fItems.push_back(std::move(button));
             }
             fValue = fKey = fScale = "";
         }
-
     
         void addCheckButton(const char* label, FAUSTFLOAT* zone)
         {
             if (fKey == "switch") {
-
-                if (std::string(fValue) == "1")
-                {
-                    std::unique_ptr<DaisyGateIn> gate = std::make_unique<DaisyGateIn>(&fHw->gate_in_1);                     
-                    std::unique_ptr<CheckButton> button = std::make_unique<CheckButton>(&gate, zone);
-                    fItems.push_back(std::move(button));
-
-                }
-                else if (std::string(fValue) == "2")
-                {
-                    std::unique_ptr<DaisyGateIn> gate = std::make_unique<DaisyGateIn>(&fHw->gate_in_2);
-                    std::unique_ptr<CheckButton> button = std::make_unique<CheckButton>(&gate, zone);
-                    fItems.push_back(std::move(button));
-                }
-
+                std::unique_ptr<CheckButton> button = std::make_unique<CheckButton>(zone);
+                //if (fValue == "1") {
+                    //button->Init(fSeed->GetPin(SW_1_PIN), fRate);
+                //}
+                fItems.push_back(std::move(button));
             }
             fValue = fKey = fScale = "";
         }
 
-
         void addNumEntry(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT init, FAUSTFLOAT min, FAUSTFLOAT max, FAUSTFLOAT step)
         {
             if (fKey == "knob") {
-                int value = std::stoi(fValue); // Convert fValue to an integer
-                if (value >= 1 && value <= 9) {
-                    InitKnob(static_cast<daisy::patch_sm>(daisy::patch_sm::CV_1 + (value - 1)), zone, min, max, fScale, step, fQuantize);
+                if (fValue == "1") {
+                    InitKnob(daisy::DaisyPod::Knob::KNOB_1, zone, min, max, fScale, step, fQuantize);
+                } else if (fValue == "2") {
+                    InitKnob(daisy::DaisyPod::Knob::KNOB_2, zone, min, max, fScale, step, fQuantize);                
                 }
             }
             fValue = fKey = fScale = "";
@@ -157,8 +122,8 @@ class DaisyPatchSmControlUI : public DaisyControlUIBase
                 fQuantize = true;
             }
         }
-};
+}
 
-#endif //__FAUST_DAISYPATCHSMONTROL_H
-/**************************  END  DaisyPatchSmControlUI.h **************************/
+#endif //__FAUST_DAISYPODONTROL_H
+/**************************  END  DaisyPodControlUI.h **************************/
 
